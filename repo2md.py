@@ -102,8 +102,16 @@ class RepositoryExporter:
                 return True
 
         # Check against .gitignore patterns
+        relative_path = os.path.relpath(path, self.source)
         for pattern in self.gitignore_patterns:
-            if fnmatch.fnmatch(path, os.path.join(self.source, pattern)):
+            # Handle directory patterns ending with /
+            if pattern.endswith('/'):
+                pattern = pattern[:-1]  # Remove trailing slash
+                if relative_path.startswith(pattern):
+                    self.logger.debug(f"Excluding directory (by .gitignore): {path}")
+                    return True
+            # Handle regular patterns
+            if fnmatch.fnmatch(relative_path, pattern):
                 self.logger.debug(f"Excluding file (by .gitignore): {path}")
                 return True
 

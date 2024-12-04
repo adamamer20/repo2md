@@ -10,6 +10,7 @@ Convert the Python script into a standalone binary executable using PyInstaller.
 ## Steps
 
 1. Install PyInstaller:
+
 ```bash
 pip3 install -U pyinstaller
 ```
@@ -25,6 +26,7 @@ pyinstaller --onefile repo2md.py
 ```bash
 bash install.sh
 ```
+
 4. Run the binary executable:
 
 ```bash
