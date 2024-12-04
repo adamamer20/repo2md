@@ -7,11 +7,13 @@ import shutil
 import tempfile
 import logging
 from datetime import datetime
+import fnmatch
 class RepositoryExporter:
-    def __init__(self, source, output_file, config_file, is_git, cli_excluded_dirs, obey_gitignore):
+    def __init__(self, source, output_file, config_file, is_git, cli_excluded_dirs, obey_gitignore, verbose=False):
         # Set up logging first
+        log_level = logging.DEBUG if verbose else logging.WARNING
         logging.basicConfig(
-            level=logging.INFO,
+            level=log_level,
             format="%(asctime)s - %(levelname)s - %(message)s"
         )
         self.logger = logging.getLogger(__name__)
@@ -101,7 +103,7 @@ class RepositoryExporter:
 
         # Check against .gitignore patterns
         for pattern in self.gitignore_patterns:
-            if os.path.fnmatch.fnmatch(path, os.path.join(self.source, pattern)):
+            if fnmatch.fnmatch(path, os.path.join(self.source, pattern)):
                 self.logger.debug(f"Excluding file (by .gitignore): {path}")
                 return True
 
@@ -183,22 +185,34 @@ class RepositoryExporter:
 
 if __name__ == "__main__":
     import argparse
-
     parser = argparse.ArgumentParser(description="Export files from a local directory or Git repository to a Markdown file.")
     parser.add_argument("source", help="Path to the local directory or URL of the Git repository.")
-    parser.add_argument("--config", default="/etc/repo2md/config.yaml", help="Path to the YAML configuration file (default: /etc/repo2md/config.yaml).")
-    parser.add_argument("--output", default="repository", help="Base name for the output Markdown file (timestamp will be appended).")
-    parser.add_argument("--git", action="store_true", help="Specify if the source is a Git repository URL.")
-    parser.add_argument("--exclude-dirs", nargs="*", help="Directories to exclude from processing.")
-    parser.add_argument("--obey-gitignore", action="store_true", help="Respect the .gitignore file in the repository.")
+    parser.add_argument("-c", "--config", default="/etc/repo2md/config.yaml", help="Path to the YAML configuration file (default: /etc/repo2md/config.yaml).")
+    parser.add_argument("-o", "--output", default="repository", help="Base name for the output Markdown file (timestamp will be appended).")
+    parser.add_argument("-g", "--git", action="store_true", help="Specify if the source is a Git repository URL.")
+    parser.add_argument("-e", "--exclude-dirs", nargs="*", help="Directories to exclude from processing.")
+    parser.add_argument("-i", "--obey-gitignore", action="store_true", help="Respect the .gitignore file in the repository.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging output.")
     args = parser.parse_args()
 
-    exporter = RepositoryExporter(args.source, args.output, args.config, args.git, args.exclude_dirs, args.obey_gitignore)
+    exporter = RepositoryExporter(
+        args.source, 
+        args.output, 
+        args.config, 
+        args.git, 
+        args.exclude_dirs, 
+        args.obey_gitignore,
+        args.verbose
+    )
 
     try:
         if args.git:
             exporter.clone_repository()
         exporter.export()
+        print(f"Repository content exported to {exporter.output_file}")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        exit(1)
     finally:
         if args.git:
             exporter.cleanup()
