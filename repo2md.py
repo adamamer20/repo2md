@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import subprocess
 import yaml
@@ -191,8 +192,10 @@ class RepositoryExporter:
         self.logger.info(f"Repository content exported to {self.output_file}")
 
 
-if __name__ == "__main__":
-    import argparse
+def main():
+    """
+    Main entry point for the repo2md command-line tool.
+    """
     parser = argparse.ArgumentParser(description="Export files from a local directory or Git repository to a Markdown file.")
     parser.add_argument("source", help="Path to the local directory or URL of the Git repository.")
     parser.add_argument("-c", "--config", default="/etc/repo2md/config.yaml", help="Path to the YAML configuration file (default: /etc/repo2md/config.yaml).")
@@ -224,3 +227,7 @@ if __name__ == "__main__":
     finally:
         if args.git:
             exporter.cleanup()
+
+
+if __name__ == "__main__":
+    main()
