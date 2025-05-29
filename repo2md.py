@@ -48,18 +48,20 @@ class RepositoryExporter:
         """
         # Define potential config file locations in order of preference
         potential_configs = []
-        
+
         if config_file:
             potential_configs.append(config_file)
-        
+
         # Add fallback locations
-        potential_configs.extend([
-            "config.yaml",  # Current directory
-            os.path.expanduser("~/.config/repo2md/config.yaml"),  # User config
-            os.path.expanduser("~/.repo2md/config.yaml"),  # User home
-            "/etc/repo2md/config.yaml",  # System-wide
-        ])
-        
+        potential_configs.extend(
+            [
+                "config.yaml",  # Current directory
+                os.path.expanduser("~/.config/repo2md/config.yaml"),  # User config
+                os.path.expanduser("~/.repo2md/config.yaml"),  # User home
+                "/etc/repo2md/config.yaml",  # System-wide
+            ]
+        )
+
         # Try each location
         for config_path in potential_configs:
             try:
@@ -78,7 +80,7 @@ class RepositoryExporter:
             except yaml.YAMLError as e:
                 self.logger.error(f"Error parsing YAML file {config_path}: {e}")
                 continue
-        
+
         # If no config file found, return default configuration
         self.logger.info("No configuration file found, using default settings")
         return {
@@ -103,8 +105,8 @@ class RepositoryExporter:
                 ".c": "c",
                 ".h": "c",
                 ".rs": "rust",
-                ".go": "go"
-            }
+                ".go": "go",
+            },
         }
 
     def load_gitignore(self):
