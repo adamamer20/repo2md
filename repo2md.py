@@ -42,28 +42,70 @@ class RepositoryExporter:
         self.obey_gitignore = obey_gitignore
         self.gitignore_patterns = self.load_gitignore() if obey_gitignore else []
 
-    def load_config(self, config_file="/etc/repo2md/config.yaml"):
+    def load_config(self, config_file=None):
         """
-        Load the configuration from a YAML file.
+        Load the configuration from a YAML file with fallback locations.
         """
-        try:
-            with open(config_file, "r", encoding="utf-8") as file:
-                config = yaml.safe_load(file)
-                if not config:
-                    self.logger.error(
-                        f"Configuration file {config_file} is empty or invalid."
-                    )
-                    raise ValueError(
-                        f"Configuration file {config_file} is empty or invalid."
-                    )
-                self.logger.info(f"Loaded config: {config}")
-                return config
-        except FileNotFoundError:
-            self.logger.error(f"Configuration file not found: {config_file}")
-            raise ValueError(f"Configuration file not found: {config_file}")
-        except yaml.YAMLError as e:
-            self.logger.error(f"Error parsing YAML file {config_file}: {e}")
-            raise ValueError(f"Error parsing YAML file {config_file}: {e}")
+        # Define potential config file locations in order of preference
+        potential_configs = []
+        
+        if config_file:
+            potential_configs.append(config_file)
+        
+        # Add fallback locations
+        potential_configs.extend([
+            "config.yaml",  # Current directory
+            os.path.expanduser("~/.config/repo2md/config.yaml"),  # User config
+            os.path.expanduser("~/.repo2md/config.yaml"),  # User home
+            "/etc/repo2md/config.yaml",  # System-wide
+        ])
+        
+        # Try each location
+        for config_path in potential_configs:
+            try:
+                with open(config_path, "r", encoding="utf-8") as file:
+                    config = yaml.safe_load(file)
+                    if not config:
+                        self.logger.warning(
+                            f"Configuration file {config_path} is empty, trying next location."
+                        )
+                        continue
+                    self.logger.info(f"Loaded config from: {config_path}")
+                    return config
+            except FileNotFoundError:
+                self.logger.debug(f"Config file not found: {config_path}")
+                continue
+            except yaml.YAMLError as e:
+                self.logger.error(f"Error parsing YAML file {config_path}: {e}")
+                continue
+        
+        # If no config file found, return default configuration
+        self.logger.info("No configuration file found, using default settings")
+        return {
+            "max_file_size": 1048576,  # 1 MB
+            "excluded_dirs": [".venv", "node_modules", "__pycache__", ".git"],
+            "included_extensions": {
+                ".py": "python",
+                ".js": "javascript",
+                ".ts": "typescript",
+                ".tsx": "react",
+                ".jsx": "react",
+                ".html": "html",
+                ".css": "css",
+                ".json": "json",
+                ".yaml": "yaml",
+                ".yml": "yaml",
+                ".md": "markdown",
+                ".sh": "bash",
+                ".sql": "sql",
+                ".java": "java",
+                ".cpp": "cpp",
+                ".c": "c",
+                ".h": "c",
+                ".rs": "rust",
+                ".go": "go"
+            }
+        }
 
     def load_gitignore(self):
         """
@@ -230,8 +272,7 @@ def main():
     parser.add_argument(
         "-c",
         "--config",
-        default="/etc/repo2md/config.yaml",
-        help="Path to the YAML configuration file (default: /etc/repo2md/config.yaml).",
+        help="Path to the YAML configuration file. If not provided, will search for config.yaml in current directory, ~/.config/repo2md/, ~/.repo2md/, and /etc/repo2md/.",
     )
     parser.add_argument(
         "-o",
