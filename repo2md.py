@@ -163,8 +163,10 @@ class RepositoryExporter:
         """
         # Check against excluded directories
         for excluded_dir in self.excluded_dirs:
-            if path.startswith(os.path.join(self.source, excluded_dir)):
-                self.logger.debug(f"Excluding directory (by config): {path}")
+            # Exclude if any directory in the path matches the excluded pattern
+            parts = os.path.normpath(path).split(os.sep)
+            if any(part.startswith(excluded_dir) for part in parts):
+                self.logger.debug(f"Excluding (nested match): {path}")
                 return True
 
         # Check against .gitignore patterns
